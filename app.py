@@ -203,3 +203,33 @@ if api_key:
 
     except Exception as e:
         st.error(f"Verbindungsfehler: {e}")
+import streamlit as st
+
+# --- 分隔线 ---
+st.markdown("---")
+
+# --- 底部信息栏 (Footer Layout) ---
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.info("📧 **遇到问题？**\n\n如果支付后未收到 Code，或遇到使用问题，请联系：\n\n**support@bau-ki.de** (请替换为你的真实邮箱)")
+
+with col2:
+    with st.expander("⚖️ Impressum & Rechtliches (点击展开)"):
+        st.markdown("""
+        ### Angaben gemäß § 5 TMG
+        
+        **Betreiber:** [你的名字或公司名称]  
+        [街道和门牌号, 如: Musterstraße 1]  
+        [邮编和城市, 如: 38100 Braunschweig]  
+        
+        **Kontakt:** E-Mail: [你的邮箱]  
+        Telefon: [你的电话, 建议填写以符合TMG要求]  
+        
+        **Umsatzsteuer-ID:** [如果有税号请填写: DE123456789]  
+        
+        **Haftungsausschluss (Disclaimer):** Der Inhalt dieses Tools wurde mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
+        """)
+
+# --- 版权声明 (可选) ---
+st.caption("© 2026 Bau-KI. All rights reserved. Made with Streamlit in Braunschweig.")
