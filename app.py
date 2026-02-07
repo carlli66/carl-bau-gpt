@@ -65,7 +65,7 @@ with st.sidebar:
             # 选项 2: 周票
             col1, col2 = st.columns([1.5, 1])
             col1.markdown("**7-Tage Pass**")
-            col2.link_button("9,99€", link_week) 
+            col2.link_button("6,99€", link_week) 
             
             st.caption("Nach Zahlung erhalten Sie eine **Bestellnummer** (cs_...).")
 
