@@ -13,16 +13,16 @@ st.set_page_config(
 
 # --- 2. 初始化 Session State (记忆模块) ---
 if "msg_count" not in st.session_state:
-    st.session_state.msg_count = 0  # 已问次数
+    st.session_state.msg_count = 0
 
 if "is_premium" not in st.session_state:
     st.session_state.is_premium = False 
 
-# 【修复点1】初始化聊天记录列表
+# 【修复点 A】初始化对话历史列表，防止对话消失
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- 3. 侧边栏 (Sidebar) ---
+# --- 3. 侧边栏 ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2666/2666505.png", width=50)
     st.markdown("### Mein Status")
@@ -42,7 +42,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 会员状态显示逻辑
+    # 会员状态显示
     if st.session_state.is_premium == "Day":
         st.success("🎫 Tagespass Aktiv")
         st.caption("Gültig für 24 Stunden.")
@@ -52,8 +52,8 @@ with st.sidebar:
     else:
         # 免费用户逻辑
         left = 3 - st.session_state.msg_count
-        # 防止显示负数
-        if left < 0: left = 0
+        # 防止出现负数
+        if left < 0: left = 0 
         
         if left > 0:
             st.info(f"Kostenlose Fragen: {left} / 3")
@@ -116,111 +116,118 @@ with st.sidebar:
             else:
                 st.error("Ungültig.")
 
-
-# --- 4. 主界面标题与布局 ---
+# --- 4. 主界面布局 ---
 st.title("🏗️ DE-BauKI: Ihr Immobilien-, Bau- und Finanzierungsexperte")
 
 st.markdown("---")
 
 col1, col2, col3 = st.columns(3)
+
 with col1:
-    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">⚖️</div><div style="font-weight: bold;">Baurecht Check</div></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">⚖️</div><div style="font-weight: bold; font-size: 16px;">Baurecht Check</div><div style="font-size: 14px; color: gray;">Deutschlandweit</div></div>""", unsafe_allow_html=True)
 with col2:
-    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">🔨</div><div style="font-weight: bold;">Sanierung</div></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">🔨</div><div style="font-weight: bold; font-size: 16px;">Sanierung</div><div style="font-size: 14px; color: gray;">Kosten & Preise</div></div>""", unsafe_allow_html=True)
 with col3:
-    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">💶</div><div style="font-weight: bold;">Finanzierung</div></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center;"><div style="font-size: 24px;">💶</div><div style="font-weight: bold; font-size: 16px;">Finanzierung</div><div style="font-size: 14px; color: gray;">Budget & KfW</div></div>""", unsafe_allow_html=True)
 
 st.markdown("---")
 
-
-# --- 5. 【核心修复】聊天历史回显 ---
-# 必须在 chat_input 之前执行，否则历史记录会闪烁或消失
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        # 如果历史消息里有图片，这里暂时不显示，只显示文字，
-        # 如果需要显示图片，逻辑会更复杂，建议 MVP 版本只存文字对话。
-
-
-# --- 6. 核心逻辑处理 ---
+# --- 5. AI 核心逻辑 (修复版) ---
 if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash") # 修正模型名称
+    try:
+        genai.configure(api_key=api_key)
+        # 注意：这里修正了模型名称，如果你的账号没有 latest 权限，改回 "gemini-1.5-flash"
+        model = genai.GenerativeModel("models/gemini-flash-latest") 
 
-    # 检查是否允许提问
-    can_ask = False
-    if st.session_state.is_premium:
-        can_ask = True
-    elif st.session_state.msg_count < 3:
-        can_ask = True
-    
-    # 只有当允许提问时，才显示输入框
-    if can_ask:
-        # 文件上传放在输入框上方，用折叠栏收纳比较整洁
-        with st.expander("📎 Datei anhängen (optional)", expanded=False):
-            uploaded_file = st.file_uploader("Bild oder PDF", type=["jpg", "png", "pdf", "jpeg"])
+        sys_instruction = """
+        Du bist ein erfahrener deutscher Bau- und Finanzierungsexperte.
+        Aufgaben:
+        1. **Baurecht:** Prüfe Genehmigungspflichten basierend auf der Landesbauordnung (LBO).
+        2. **Kosten:** Schätze Sanierungskosten realistisch.
+        3. **Finanzierung:** Ermittle Gesamtkosten und weise auf KfW-Förderungen hin.
+        Regeln:
+        - Antworte strukturiert auf Deutsch.
+        - Disclaimer: "Hinweis: KI-Ersteinschätzung. Keine Rechts- oder Finanzberatung."
+        """
+        
+        # 【修复点 B】先显示历史聊天记录，否则刷新就没了
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+        
+        # 判断是否允许提问
+        can_ask = False
+        if st.session_state.is_premium:
+            can_ask = True
+        elif st.session_state.msg_count < 3:
+            can_ask = True
+        
+        if can_ask:
+            # 文件上传
+            with st.expander("📎 Datei anhängen (optional)", expanded=False):
+                uploaded_file = st.file_uploader("Bild oder PDF", type=["jpg", "png", "pdf", "jpeg"])
+            
+            # 输入框
+            user_input = st.chat_input("Frage stellen (z.B. Was kostet eine Wärmepumpe?)")
 
-        user_input = st.chat_input("Frage stellen (z.B. Was kostet eine Wärmepumpe?)")
+            if user_input:
+                # 1. 存入用户消息并显示
+                st.session_state.messages.append({"role": "user", "content": user_input})
+                with st.chat_message("user"):
+                    st.write(user_input)
+                    if uploaded_file:
+                        st.image(uploaded_file, caption="Anhang", width=300)
 
-        if user_input:
-            # A. 显示用户输入
-            st.chat_message("user").markdown(user_input)
-            st.session_state.messages.append({"role": "user", "content": user_input})
-
-            # B. 生成 AI 回答
-            with st.chat_message("assistant"):
-                with st.spinner("Bau-KI analysiert..."):
-                    
-                    # 准备 Prompt
-                    sys_instruction = """
-                    Du bist ein erfahrener deutscher Bau- und Finanzierungsexperte.
-                    Antworte strukturiert auf Deutsch.
-                    Disclaimer: "Hinweis: KI-Ersteinschätzung. Keine Rechts- oder Finanzberatung."
-                    """
-                    full_prompt = sys_instruction + "\n\nUser Frage: " + user_input
-
-                    try:
-                        # 调用 API
-                        if uploaded_file:
-                            img = Image.open(uploaded_file)
-                            response = model.generate_content([full_prompt, img])
-                        else:
-                            response = model.generate_content(full_prompt)
-                        
-                        response_text = response.text
-                        st.markdown(response_text)
-
-                        # C. 存入历史
-                        st.session_state.messages.append({"role": "assistant", "content": response_text})
-                        
-                        # D. 【修复点2】扣费与刷新
-                        if not st.session_state.is_premium:
-                            st.session_state.msg_count += 1
-                            st.rerun() # 强制刷新，让 sidebar 计数器立刻变
+                # 2. 生成 AI 回答
+                with st.chat_message("assistant"):
+                    with st.spinner("Analysiere..."):
+                        full_prompt = sys_instruction + "\n\nUser Frage: " + user_input
+                        try:
+                            if uploaded_file:
+                                img = Image.open(uploaded_file)
+                                response = model.generate_content([full_prompt, img])
+                            else:
+                                response = model.generate_content(full_prompt)
                             
-                    except Exception as e:
-                        st.error(f"Fehler: {e}")
+                            response_text = response.text
+                            st.write(response_text)
+                            
+                            # 3. 存入 AI 消息
+                            st.session_state.messages.append({"role": "assistant", "content": response_text})
 
-    else:
-        # 次数用完的提示
-        st.warning("🔒 Ihr kostenloses Limit ist erreicht (3/3). Bitte kaufen Sie einen Pass, um fortzufahren.")
+                            # 4. 【修复点 C】扣费并强制刷新
+                            if not st.session_state.is_premium:
+                                st.session_state.msg_count += 1
+                                # 强制刷新页面，让左边计数器立刻变
+                                st.rerun()
+
+                        except Exception as e:
+                            st.error(f"Fehler bei der Analyse: {e}")
+        else:
+             st.warning("🔒 Kostenloses Limit erreicht. Bitte Upgrade wählen.")
+
+    except Exception as e:
+        st.error(f"Verbindungsfehler: {e}")
 
 
-# --- 7. 底部 Footer (合规信息) ---
+# --- 6. 底部 Footer ---
 st.markdown("---")
+
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.info("📧 **Hilfe & Support**\n\nProblem mit dem Code? Kontaktieren Sie:\n\n**hello@lionmove.net**")
+    st.info("📧 **Hilfe & Support**\n\nHaben Sie keinen Code erhalten oder gibt es Probleme mit der Zahlung? Kontaktieren Sie uns bitte:\n\n**hello@xxxxxxx.net** (Bitte Ihre E-Mail einfügen)")
 
 with col2:
     with st.expander("⚖️ Impressum & Rechtliches"):
         st.markdown("""
-        **Betreiber:** [M.Sc. Architekt Li]  
-        [Vorgarten 1b]  
+        ### Angaben gemäß § 5 TMG
+        **Betreiber:** [M.Sc. Architekt xxx]  
+        [xxxxxx]  
         [38104 Braunschweig]  
-        **Kontakt:** hello@lionmove.net  
-        **Haftung:** KI-Inhalte sind keine Fachberatung.
+        **Kontakt:** E-Mail: [hello@xxxxx.net]  
+        **Umsatzsteuer-ID:** [USt-IdNr.: DExxxxxx]  
+        **Haftungsausschluss:** Die durch die KI generierten Inhalte dienen lediglich als Hilfestellung und ersetzen keine fachliche Beratung.
         """)
 
-st.caption("© 2026 Bau-KI. Braunschweig.")
+st.caption("© 2026 Bau-KI. Entwickelt in Braunschweig. Alle Rechte vorbehalten.")
