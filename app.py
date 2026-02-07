@@ -5,15 +5,13 @@ from PIL import Image
 # ==========================================
 # 1. 核心配置
 # ==========================================
-# 通用解锁密码 (请在 Stripe 成功页面上也写这个)
-PREMIUM_CODE = "BAU2026" 
-# 你的 Stripe 支付链接
-STRIPE_LINK = "https://buy.stripe.com/你的链接" 
+PREMIUM_CODE = "BAU2026"  # 解锁密码
+STRIPE_LINK = "https://buy.stripe.com/你的链接" # Stripe 链接
 
 # ==========================================
 # 2. 页面配置
 # ==========================================
-st.set_page_config(page_title="DE-BauKI Pro", page_icon="🏗️", layout="centered")
+st.set_page_config(page_title="DE-BauKI Expert", page_icon="🏗️", layout="centered")
 
 # 初始化状态
 if "msg_count" not in st.session_state:
@@ -41,7 +39,7 @@ with st.sidebar:
     # 会员状态逻辑
     if st.session_state.is_premium:
         st.success("👑 **Premium Aktiv**")
-        st.caption("Modell: Gemini 1.5 Pro (High-End)")
+        st.caption("Modell: Gemini 1.5 Pro")
         if st.button("Logout"):
             st.session_state.is_premium = False
             st.rerun()
@@ -77,7 +75,7 @@ with st.sidebar:
 # 4. 主界面
 # ==========================================
 st.title("🏗️ DE-BauKI Expert")
-st.markdown("Ihr KI-Architekt für Baurecht, Sanierung & Kosten (Powered by Gemini 1.5 Pro).")
+st.markdown("Ihr KI-Architekt für Baurecht, Sanierung & Kosten.")
 
 col1, col2, col3 = st.columns(3)
 with col1: st.markdown('<div style="text-align:center">⚖️<br><small>Baurecht</small></div>', unsafe_allow_html=True)
@@ -94,17 +92,20 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # ==========================================
-# 6. AI 核心逻辑 (修复了缩进和模型名称)
+# 6. AI 核心逻辑 (智能容错版)
 # ==========================================
-# 这一行必须顶格写，不能有空格！
 if api_key:
     genai.configure(api_key=api_key)
     
-    # 尝试加载 Pro 模型，如果失败自动切回 Flash
-    try:
-        model = genai.GenerativeModel("gemini-1.5-pro-latest")
-    except:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+    # 定义一个函数，专门用来尝试生成回答
+    # 如果 Pro 模型失败，自动用 Flash 模型重试
+    def smart_generate(model_name, prompt_parts):
+        try:
+            model = genai.GenerativeModel(model_name)
+            return model.generate_content(prompt_parts)
+        except Exception as e:
+            # 如果是 404 错误（找不到模型），抛出异常让外面捕获
+            raise e
 
     # 判断权限
     can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
@@ -124,41 +125,47 @@ if api_key:
 
             # 2. 生成回答
             with st.chat_message("assistant"):
-                with st.spinner("Bau-KI analysiert..."):
+                with st.spinner("Bau-KI denkt nach..."):
+                    
+                    # 准备 Prompt
+                    sys_prompt = """
+                    Du bist ein erfahrener deutscher Architekt und Bauingenieur.
+                    Aufgaben: Baurecht (LBO), Kosten, DIN-Normen.
+                    Antworte präzise auf Deutsch.
+                    Disclaimer: "Hinweis: KI-Ersteinschätzung. Keine Rechtsberatung."
+                    """
+                    full_prompt = sys_prompt + "\n\nUser Frage: " + prompt
+                    
+                    # 准备发送给 AI 的内容列表
+                    content_parts = [full_prompt]
+                    if uploaded_file:
+                        img = Image.open(uploaded_file)
+                        content_parts.append(img)
+
+                    # --- 核心修改：双保险机制 ---
+                    response_text = ""
                     try:
-                        sys_prompt = """
-                        Du bist ein erfahrener deutscher Architekt.
-                        Aufgaben: Baurecht (LBO), Kosten, DIN-Normen.
-                        Antworte präzise auf Deutsch.
-                        Disclaimer: "Hinweis: KI-Ersteinschätzung. Keine Rechtsberatung."
-                        """
-                        full_prompt = sys_prompt + "\n\nUser Frage: " + prompt
-                        
-                        if uploaded_file:
-                            img = Image.open(uploaded_file)
-                            response = model.generate_content([full_prompt, img])
-                        else:
-                            response = model.generate_content(full_prompt)
-                        
-                        ans = response.text
-                        st.markdown(ans)
-                        
-                        st.session_state.messages.append({"role": "assistant", "content": ans})
-
-                        # 3. 扣费逻辑
-                        if not st.session_state.is_premium:
-                            st.session_state.msg_count += 1
-                            st.rerun()
-
-                    except Exception as e:
-                        # 错误处理：如果 Pro 崩了，尝试用 Flash 重试一次
+                        # 第一步：尝试用最强的 1.5 Pro
+                        response = smart_generate("gemini-1.5-pro", content_parts)
+                        response_text = response.text
+                    except Exception:
                         try:
-                            fallback_model = genai.GenerativeModel("gemini-1.5-flash")
-                            response = fallback_model.generate_content(full_prompt)
-                            st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                        except:
-                            st.error(f"Ein Fehler ist aufgetreten: {e}")
+                            # 第二步：如果 Pro 挂了，尝试用 1.5 Flash (最稳)
+                            # st.caption("⚠️ Pro-Modell ausgelastet, nutze Flash-Modell...") 
+                            response = smart_generate("gemini-1.5-flash", content_parts)
+                            response_text = response.text
+                        except Exception as e2:
+                             st.error(f"Verbindungsfehler: {e2}")
+                             st.stop()
+                    
+                    # 显示回答
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+
+                    # 3. 扣费逻辑
+                    if not st.session_state.is_premium:
+                        st.session_state.msg_count += 1
+                        st.rerun()
     else:
         st.warning("🔒 **Limit erreicht.** Bitte Code eingeben.")
         st.caption("Den Code 'BAU2026' finden Sie auf der Zahlungsbestätigung.")
