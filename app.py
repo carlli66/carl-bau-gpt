@@ -5,12 +5,12 @@ import extra_streamlit_components as stx
 import time
 
 # ==========================================
-# 1. 专业级页面配置
+# 1. 页面配置 (宽屏 + 移动端优化)
 # ==========================================
 st.set_page_config(
     page_title="DE-BauKI | Ihr Experten-Tool", 
     page_icon="🏗️", 
-    layout="wide", # 开启宽屏模式
+    layout="wide", 
     initial_sidebar_state="expanded"
 )
 
@@ -19,30 +19,25 @@ PREMIUM_CODE = "BAU2026"
 STRIPE_LINK = "https://buy.stripe.com/6oUbJ1dR4bfQfsj0EodMI02" 
 
 # ==========================================
-# 2. Cookie 管理 & 状态初始化 (已修复 CachedWidgetWarning)
+# 2. Cookie 管理 (无需 @st.cache_resource)
 # ==========================================
-# ★★★ 修复点：直接初始化，不要使用 @st.cache_resource ★★★
 cookie_manager = stx.CookieManager()
-
-# 获取 Cookie (稍作延迟以确保组件加载)
 cookie_usage = cookie_manager.get(cookie="bauki_usage")
 
 # 初始化 Session State
 if "msg_count" not in st.session_state:
-    # 如果 Cookie 有值，就用 Cookie 的值，否则为 0
     st.session_state.msg_count = int(cookie_usage) if cookie_usage else 0
-
 if "is_premium" not in st.session_state:
     st.session_state.is_premium = False 
 if "messages" not in st.session_state:
     st.session_state.messages = [] 
 
-# 同步检查 (如果浏览器里存的次数比当前 Session 多，说明是刷新了页面，强制同步)
+# 同步 Cookie
 if cookie_usage and int(cookie_usage) > st.session_state.msg_count:
     st.session_state.msg_count = int(cookie_usage)
 
 # ==========================================
-# 3. 侧边栏 (控制面板)
+# 3. 侧边栏 (黑色模式适配)
 # ==========================================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2666/2666505.png", width=70)
@@ -57,20 +52,16 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 状态显示
     if st.session_state.is_premium:
         st.success("🌟 **PREMIUM STATUS**")
         st.caption("✅ Modell: **Gemini 2.5 Pro**")
-        st.caption("✅ Gewerbe & Privat")
-        st.caption("✅ Dokumentenanalyse")
+        st.caption("✅ Unbegrenzt")
         
         st.markdown("---")
         if st.button("Logout"):
             st.session_state.is_premium = False
-            # 清除状态并刷新
             st.rerun()
     else:
-        # 免费版进度条
         left = 3 - st.session_state.msg_count
         if left < 0: left = 0
         
@@ -80,12 +71,6 @@ with st.sidebar:
         if left == 0:
             st.error("Limit erreicht.")
             st.markdown("### 🔓 Professional Upgrade")
-            st.markdown("""
-            Nutzen Sie das volle Potenzial:
-            - 🏢 **Gewerbebau & Investment**
-            - 💶 **Detaillierte Finanzierung**
-            - ⚖️ **Rechtssichere Ersteinschätzung**
-            """)
             st.link_button("👉 Jetzt freischalten (4,99€)", STRIPE_LINK, use_container_width=True)
             
             with st.expander("🎫 Code einlösen"):
@@ -99,14 +84,14 @@ with st.sidebar:
                         st.error("Ungültig")
 
     st.markdown("---")
-    st.caption("v3.2 Professional Build")
+    st.caption("v3.3 Dark Mode Fix")
 
 # ==========================================
-# 4. 智能 AI 核心 (多模型支持)
+# 4. AI 核心函数
 # ==========================================
 def get_ai_response(api_key, sys_prompt, user_prompt, image=None):
     genai.configure(api_key=api_key)
-    # 优先使用最强模型
+    # 优先顺序
     models = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
     
     for m in models:
@@ -114,29 +99,52 @@ def get_ai_response(api_key, sys_prompt, user_prompt, image=None):
             model = genai.GenerativeModel(m)
             content = [sys_prompt + "\n\nUser Anfrage: " + user_prompt]
             if image: content.append(image)
-            
             response = model.generate_content(content)
             return response.text
         except:
             continue
-    raise Exception("Alle KI-Modelle derzeit ausgelastet.")
+    raise Exception("KI-Dienst momentan ausgelastet.")
 
 # ==========================================
-# 5. 主界面布局 (Tab 分页设计 - 专业版)
+# 5. 主界面 (CSS 强制修复看不清的问题)
 # ==========================================
 
-# Hero Header - 专业配色
+# ★★★ CSS 修复核心：强制文字颜色为深色，背景为浅色 ★★★
 st.markdown("""
 <style>
-    .main-header {font-size: 2.5rem; font-weight: 700; color: #0F172A; margin-bottom: 0;}
-    .sub-header {font-size: 1.2rem; color: #475569; margin-bottom: 20px;}
-    .feature-card {background-color: #F1F5F9; padding: 15px; border-radius: 8px; border-left: 5px solid #0F172A;}
+    /* 强制 Header 颜色适配 */
+    .main-header {
+        font-size: 2.5rem; 
+        font-weight: 700; 
+        margin-bottom: 0;
+    }
+    .sub-header {
+        font-size: 1.2rem; 
+        margin-bottom: 20px; 
+        opacity: 0.8;
+    }
+    
+    /* 修复 Feature Card 在夜间模式看不清的问题 */
+    .feature-card {
+        background-color: #F1F5F9 !important; /* 强制浅灰背景 */
+        padding: 15px; 
+        border-radius: 8px; 
+        border-left: 5px solid #0F172A;
+        color: #0F172A !important; /* ★★★ 强制文字为深蓝/黑色 ★★★ */
+        margin-bottom: 10px;
+    }
+    
+    /* 强制卡片内的小字也是深色 */
+    .feature-card div, .feature-card b {
+        color: #0F172A !important;
+    }
 </style>
+
 <div class="main-header">DE-BauKI Experte</div>
 <div class="sub-header">Ihr digitaler Architekt, Bauingenieur und Finanzierungsberater.</div>
 """, unsafe_allow_html=True)
 
-# 定义四个专业板块
+# Tabs
 tab1, tab2, tab3, tab4 = st.tabs([
     "🏠 Privat & Wohnen", 
     "🏢 Gewerbe & Investment", 
@@ -144,35 +152,25 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "💶 Finanzierung & KfW"
 ])
 
-# 默认 System Prompt
 base_role = "Du bist 'DE-BauKI', Deutschlands führender KI-Experte für Immobilien."
 current_context = ""
 
+# 定义内容 (HTML 中已强制字体颜色)
 with tab1:
     st.markdown("""
     <div class="feature-card">
     <b>Fokus:</b> Einfamilienhäuser, Eigentumswohnungen, Sanierung, Energieeffizienz (GEG).
     </div>
     """, unsafe_allow_html=True)
-    current_context = """
-    ROLLENBESCHREIBUNG:
-    Du bist ein erfahrener Architekt für privaten Wohnbau.
-    Fokus: Wohnkomfort, Grundrissoptimierung, Kosteneffizienz für Privatleute, energetische Sanierung (Wärmepumpe, Dämmung).
-    Tone-of-Voice: Hilfsbereit, verständlich, aber fachlich korrekt.
-    """
+    current_context = "ROLLENBESCHREIBUNG: Architekt für privaten Wohnbau. Fokus: Wohnkomfort, Kosten, Sanierung."
 
 with tab2:
     st.markdown("""
     <div class="feature-card">
-    <b>Fokus:</b> Bürogebäude, Lagerhallen, Renditeobjekte, Brandschutz, Arbeitsstättenverordnung.
+    <b>Fokus:</b> Bürogebäude, Lagerhallen, Renditeobjekte, Brandschutz, ASR.
     </div>
     """, unsafe_allow_html=True)
-    current_context = """
-    ROLLENBESCHREIBUNG:
-    Du bist ein Projektentwickler und Architekt für Gewerbeimmobilien.
-    Fokus: Flächeneffizienz, Arbeitsstättenrichtlinien (ASR), Brandschutz, Renditeberechnung, Nutzungsänderungen.
-    Tone-of-Voice: Business-orientiert, zahlengetrieben, präzise.
-    """
+    current_context = "ROLLENBESCHREIBUNG: Projektentwickler Gewerbe. Fokus: Rendite, Brandschutz, Flächeneffizienz."
 
 with tab3:
     st.markdown("""
@@ -180,125 +178,80 @@ with tab3:
     <b>Fokus:</b> Landesbauordnungen (LBO), Baugenehmigungen, Abstandsflächen, DIN-Normen.
     </div>
     """, unsafe_allow_html=True)
-    current_context = """
-    ROLLENBESCHREIBUNG:
-    Du bist ein Fachplaner für Baurecht und Normung.
-    Fokus: Prüfung auf Genehmigungspflicht, LBO-Check (nach Bundesland), DIN-Normen (z.B. DIN 276, DIN 277), Nachbarschaftsrecht.
-    Tone-of-Voice: Juristisch präzise, warnend bei Risiken, zitierend (Paragraphen).
-    """
+    current_context = "ROLLENBESCHREIBUNG: Fachplaner Baurecht. Fokus: Genehmigungspflicht, LBO, DIN-Normen."
 
 with tab4:
     st.markdown("""
     <div class="feature-card">
-    <b>Fokus:</b> Baufinanzierung, Zinsen, KfW-Förderprogramme, BAFA-Zuschüsse, Budgetplanung.
+    <b>Fokus:</b> Baufinanzierung, Zinsen, KfW-Förderprogramme, BAFA, Budget.
     </div>
     """, unsafe_allow_html=True)
-    current_context = """
-    ROLLENBESCHREIBUNG:
-    Du bist ein unabhängiger Baufinanzierungsberater.
-    Fokus: Machbarkeitsanalyse, Vollkostenrechnung (Kaufpreis + Nebenkosten + Sanierung), Fördermittel-Check (KfW/BAFA), Tilgungspläne.
-    Tone-of-Voice: Analytisch, konservativ kalkulierend.
-    """
+    current_context = "ROLLENBESCHREIBUNG: Finanzierungsberater. Fokus: Vollkostenrechnung, Kredit, Förderung."
 
 st.markdown("---")
 
 # ==========================================
-# 6. 聊天与交互区域
+# 6. 交互区域 (IndentationError 修复)
 # ==========================================
 
-# 历史记录回显
+# 历史记录
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# ★★★ 注意：这里的缩进必须严格对齐 ★★★
 if api_key:
-    # 权限判断
     can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
     if can_ask:
-        # 文件上传区 (更专业)
-        with st.expander("📎 Dokumenten-Upload (Grundrisse, Exposés, Angebote)", expanded=False):
-            uploaded_file = st.file_uploader("Datei auswählen", type=["jpg", "png", "jpeg", "pdf"], label_visibility="collapsed")
+        with st.expander("📎 Dokumenten-Upload", expanded=False):
+            uploaded_file = st.file_uploader("Datei", type=["jpg", "png", "pdf"], label_visibility="collapsed")
 
-        # 输入框
         placeholder_text = "Stellen Sie Ihre Frage hier..."
-        if tab4: placeholder_text = "z.B. Welche KfW-Förderung gibt es für Neubau?"
+        if tab4: placeholder_text = "z.B. Wie viel Eigenkapital brauche ich?"
         
         if prompt := st.chat_input(placeholder_text):
             
-            # 1. 记录用户输入
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.write(prompt)
                 if uploaded_file: st.image(uploaded_file, width=300)
 
-            # 2. 生成回答
             with st.chat_message("assistant"):
-                with st.spinner("Bau-KI analysiert Daten & Vorschriften..."):
+                with st.spinner("Bau-KI analysiert..."):
                     try:
                         img_obj = Image.open(uploaded_file) if uploaded_file else None
                         
-                        # 组合最终 Prompt
                         final_sys_prompt = base_role + current_context + """
-                        \nALLGEMEINE REGELN:
-                        1. Antworte immer auf Deutsch.
-                        2. Strukturiere deine Antwort (Fettdruck, Aufzählungszeichen).
-                        3. Beende JEDE Antwort mit dem Disclaimer:
-                        "⚠️ Haftungsausschluss: KI-Ersteinschätzung. Ersetzt keine fachliche Planung oder Rechtsberatung."
+                        \nREGELN:
+                        1. Antworte auf Deutsch.
+                        2. Strukturiere die Antwort.
+                        3. Disclaimer am Ende: "⚠️ Haftungsausschluss: KI-Ersteinschätzung. Keine Rechtsberatung."
                         """
                         
-                        # 调用 AI
                         ans_text = get_ai_response(api_key, final_sys_prompt, prompt, img_obj)
                         
                         st.markdown(ans_text)
                         st.session_state.messages.append({"role": "assistant", "content": ans_text})
 
-                        # 3. 扣费 & Cookie 更新
                         if not st.session_state.is_premium:
                             new_val = st.session_state.msg_count + 1
                             st.session_state.msg_count = new_val
-                            
-                            # 更新 Cookie
                             cookie_manager.set("bauki_usage", new_val, key="update_usage")
-                            
-                            # 稍作等待以确保 Cookie 写入
                             time.sleep(0.5)
                             st.rerun()
 
                     except Exception as e:
-                        st.error(f"Systemfehler: {e}")
+                        st.error(f"Fehler: {e}")
     else:
-        st.warning("🔒 **Limit erreicht.**")
-        st.info("Bitte schalten Sie den Premium-Zugang frei, um fortzufahren.")
+        st.warning("🔒 Limit erreicht.")
+        st.info("Bitte Premium freischalten.")
 else:
-    st.info("👋 Bitte API Key eingeben.")
+    st.info("👋 Bitte Google API Key eingeben.")
 
 # ==========================================
-# 7. 底部 Footer (专业合规)
+# 7. Footer
 # ==========================================
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 st.divider()
-
-col_f1, col_f2, col_f3 = st.columns(3)
-
-with col_f1:
-    st.markdown("##### Kontakt")
-    st.caption("📧 support@bau-ki.de")
-    st.caption("📍 Braunschweig, Deutschland")
-
-with col_f2:
-    st.markdown("##### Rechtliches")
-    with st.expander("Impressum & Datenschutz"):
-        st.caption("""
-        **Angaben gemäß § 5 TMG**
-        Betreiber: M.Sc. Architekt [Ihr Name]
-        [Adresse]
-        USt-ID: [Nummer]
-        
-        **Haftung:** Keine Gewähr für Richtigkeit der KI-Antworten.
-        """)
-
-with col_f3:
-    st.markdown("##### Systemstatus")
-    st.caption("🟢 Alle Systeme betriebsbereit")
-    st.caption("🤖 Engine: Gemini 2.5 Pro")
+st.caption("© 2026 DE-BauKI | Gemini 2.5 Pro")
