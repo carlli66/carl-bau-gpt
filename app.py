@@ -256,3 +256,43 @@ if api_key:
                             new_val = st.session_state.msg_count + 1
                             st.session_state.msg_count = new_val
                             cookie_manager.set("bauki_usage", new_val, key="update_usage")
+                            time.sleep(0.5)
+                            st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Systemfehler: {e}")
+    else:
+        st.warning("🔒 **Limit erreicht.**")
+        st.info("Bitte schalten Sie den Premium-Zugang frei, um fortzufahren.")
+else:
+    st.info("👋 Bitte API Key eingeben.")
+
+# ==========================================
+# 7. 底部 Footer (专业合规)
+# ==========================================
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.divider()
+
+col_f1, col_f2, col_f3 = st.columns(3)
+
+with col_f1:
+    st.markdown("##### Kontakt")
+    st.caption("📧 support@bau-ki.de")
+    st.caption("📍 Braunschweig, Deutschland")
+
+with col_f2:
+    st.markdown("##### Rechtliches")
+    with st.expander("Impressum & Datenschutz"):
+        st.caption("""
+        **Angaben gemäß § 5 TMG**
+        Betreiber: M.Sc. Architekt [Ihr Name]
+        [Adresse]
+        USt-ID: [Nummer]
+        
+        **Haftung:** Keine Gewähr für Richtigkeit der KI-Antworten.
+        """)
+
+with col_f3:
+    st.markdown("##### Systemstatus")
+    st.caption("🟢 Alle Systeme betriebsbereit")
+    st.caption("🤖 Engine: Gemini 2.5 Pro")
