@@ -104,7 +104,7 @@ can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
 # ... 前面的代码 ...
     
-    if api_key:
+if api_key:
         genai.configure(api_key=api_key)
         
         # ★★★ 修改了这一行：加上 -latest ★★★
