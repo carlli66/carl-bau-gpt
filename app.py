@@ -3,20 +3,20 @@ import google.generativeai as genai
 from PIL import Image
 
 # ==========================================
-# 1. 配置区域 (只需改这里)
+# 1. 核心配置 (只需改这里)
 # ==========================================
-# 设置你的通用密码 (要和 Stripe 成功页面上写的一样)
+# 你的通用解锁密码 (要和 Stripe 成功页面上写的一样)
 PREMIUM_CODE = "BAU2026" 
 
-# 你的 Stripe 支付链接 (用户点按钮跳转去付钱)
+# 你的 Stripe 支付链接
 STRIPE_LINK = "https://buy.stripe.com/你的链接" 
 
 # ==========================================
 # 2. 页面基础设置
 # ==========================================
-st.set_page_config(page_title="DE-BauKI", page_icon="🏗️", layout="centered")
+st.set_page_config(page_title="DE-BauKI Pro", page_icon="🏗️", layout="centered")
 
-# 初始化状态
+# 初始化状态 (记忆模块)
 if "msg_count" not in st.session_state:
     st.session_state.msg_count = 0 # 已用次数
 if "is_premium" not in st.session_state:
@@ -42,8 +42,8 @@ with st.sidebar:
     # --- 核心逻辑：判断会员状态 ---
     if st.session_state.is_premium:
         st.success("👑 **Premium Aktiv**")
-        st.caption("Unbegrenzter Zugriff.")
-        if st.button("Logout / Code entfernen"):
+        st.caption("Modell: Gemini 1.5 Pro (High-End)")
+        if st.button("Logout"):
             st.session_state.is_premium = False
             st.rerun()
     else:
@@ -57,15 +57,15 @@ with st.sidebar:
         else:
             st.error("Limit erreicht (0/3)")
             st.markdown("#### 🔓 Vollzugriff erhalten:")
-            st.markdown("Erhalten Sie unbegrenzten Zugriff für 7 Tage.")
+            st.markdown("Nutzen Sie das **Pro-Modell** unbegrenzt für 7 Tage.")
             st.link_button("👉 Jetzt freischalten (4,99€)", STRIPE_LINK)
-            st.caption("Sie erhalten einen Code nach der Zahlung.")
+            st.caption("Sie erhalten den Code direkt nach der Zahlung.")
 
         st.markdown("---")
         
         # --- 解锁输入框 (密码验证) ---
         with st.expander("🎫 Code eingeben", expanded=True):
-            user_code = st.text_input("Zugangscode:", placeholder="z.B. BAU...", type="password")
+            user_code = st.text_input("Zugangscode:", placeholder="Code hier eingeben...", type="password")
             if st.button("Prüfen"):
                 if user_code == PREMIUM_CODE:
                     st.session_state.is_premium = True
@@ -79,7 +79,7 @@ with st.sidebar:
 # 4. 主界面内容
 # ==========================================
 st.title("🏗️ DE-BauKI Expert")
-st.markdown("Ihr KI-Assistent für Baurecht, Sanierung & Kosten (Deutschland).")
+st.markdown("Ihr KI-Architekt für Baurecht, Sanierung & Kosten (Powered by Gemini 1.5 Pro).")
 
 # 三列布局图标
 col1, col2, col3 = st.columns(3)
@@ -97,17 +97,19 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # ==========================================
-# 6. AI 处理逻辑
+# 6. AI 处理逻辑 (已升级为 Pro 模型)
 # ==========================================
 # 判断是否允许提问
 can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
 if api_key:
     genai.configure(api_key=api_key)
+    
+    # ★★★ 这里升级了模型 ★★★
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash") # 确保模型名字正确
-    except:
-        st.error("Modell-Fehler. Bitte API Key prüfen.")
+        model = genai.GenerativeModel("gemini-1.5-pro") 
+    except Exception as e:
+        st.error(f"Modell-Fehler: {e}")
 
     if can_ask:
         # 文件上传区
@@ -115,7 +117,8 @@ if api_key:
             uploaded_file = st.file_uploader("Bild/PDF", type=["jpg", "png", "jpeg", "pdf"])
 
         # 输入框
-        if prompt := st.chat_input("Ihre Frage stellen..."):
+        if prompt := st.chat_input("Frage stellen (z.B. Ist eine Baugenehmigung nötig?)..."):
+            
             # 1. 显示并保存用户问题
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -125,10 +128,18 @@ if api_key:
 
             # 2. 调用 AI
             with st.chat_message("assistant"):
-                with st.spinner("Bau-KI analysiert..."):
+                with st.spinner("Bau-KI analysiert (Pro-Modell)..."):
                     try:
-                        sys_prompt = "Du bist ein deutscher Bau-Experte. Antworte kurz, präzise und professionell auf Deutsch."
-                        full_prompt = sys_prompt + "\nFrage: " + prompt
+                        # 设定专家人设
+                        sys_prompt = """
+                        Du bist ein erfahrener deutscher Architekt und Bauingenieur.
+                        Deine Aufgaben:
+                        1. Analysiere Fragen zu Baurecht (LBO), Sanierungskosten und DIN-Normen.
+                        2. Antworte präzise, professionell und hilfreich auf Deutsch.
+                        3. Wenn Bilder hochgeladen werden, analysiere bauliche Details.
+                        Disclaimer: "Hinweis: KI-Ersteinschätzung. Keine Rechtsberatung."
+                        """
+                        full_prompt = sys_prompt + "\n\nUser Frage: " + prompt
                         
                         if uploaded_file:
                             img = Image.open(uploaded_file)
@@ -150,13 +161,13 @@ if api_key:
                     except Exception as e:
                         st.error(f"Ein Fehler ist aufgetreten: {e}")
     else:
-        st.warning("🔒 **Limit erreicht.** Bitte geben Sie den Code ein, um fortzufahren.")
-        st.caption("Klicken Sie links auf 'Jetzt freischalten'.")
+        st.warning("🔒 **Limit erreicht.** Bitte geben Sie den Code ein.")
+        st.caption("Code vergessen? Schauen Sie auf der Stripe-Bestätigungsseite nach.")
 
 else:
     st.warning("Bitte Google API Key in der Sidebar eingeben.")
 
-# 底部 Impressum (保持精简)
+# 底部 Impressum
 st.divider()
 with st.expander("Impressum & Kontakt"):
-    st.write("Kontakt: support@bau-ki.de | Betreiber: M.Sc. Architekt [Name]")
+    st.write("Kontakt: support@bau-ki.de | Betreiber: M.Sc. Architekt [Dein Name]")
