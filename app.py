@@ -19,7 +19,7 @@ PREMIUM_CODE = "BAU2026"
 STRIPE_LINK = "https://buy.stripe.com/6oUbJ1dR4bfQfsj0EodMI02" 
 
 # ==========================================
-# 2. Cookie 管理 (无需 @st.cache_resource)
+# 2. Cookie 管理 (直接初始化)
 # ==========================================
 cookie_manager = stx.CookieManager()
 cookie_usage = cookie_manager.get(cookie="bauki_usage")
@@ -84,7 +84,7 @@ with st.sidebar:
                         st.error("Ungültig")
 
     st.markdown("---")
-    st.caption("v3.3 Dark Mode Fix")
+    st.caption("v3.4 Final Build")
 
 # ==========================================
 # 4. AI 核心函数
@@ -191,7 +191,7 @@ with tab4:
 st.markdown("---")
 
 # ==========================================
-# 6. 交互区域 (IndentationError 修复)
+# 6. 交互区域
 # ==========================================
 
 # 历史记录
@@ -199,7 +199,6 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# ★★★ 注意：这里的缩进必须严格对齐 ★★★
 if api_key:
     can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
@@ -250,8 +249,28 @@ else:
     st.info("👋 Bitte Google API Key eingeben.")
 
 # ==========================================
-# 7. Footer
+# 7. 底部 Footer (Impressum & Kontakt - 已加回)
 # ==========================================
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
-st.caption("© 2026 DE-BauKI | Gemini 2.5 Pro")
+
+col_f1, col_f2, col_f3 = st.columns(3)
+
+with col_f1:
+    st.markdown("##### Kontakt")
+    st.caption("📧 support@bau-ki.de")
+    st.caption("📍 Braunschweig, Deutschland")
+
+with col_f2:
+    st.markdown("##### Rechtliches")
+    with st.expander("Impressum & Datenschutz"):
+        st.caption("""
+        **Angaben gemäß § 5 TMG**
+        
+        **Betreiber:** M.Sc. Architekt [Ihr Name]
+        [Straße und Hausnummer]
+        [PLZ und Ort]
+        
+        **Kontakt:** E-Mail: support@bau-ki.de
+        
+        **Haftung:**
