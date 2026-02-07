@@ -117,7 +117,7 @@ if api_key:
 
     # ... 后面的代码 ...
 
-    if can_ask:
+if can_ask:
         # 文件上传区
         with st.expander("📎 Datei / Bild hochladen (Optional)"):
             uploaded_file = st.file_uploader("Bild/PDF", type=["jpg", "png", "jpeg", "pdf"])
