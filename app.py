@@ -213,7 +213,7 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     # 紧急联系方式 (Support)
-    st.info("📧 **Hilfe & Support**\n\nHaben Sie keinen Code erhalten oder gibt es Probleme mit der Zahlung? Kontaktieren Sie uns bitte:\n\n**support@bau-ki.de** (Bitte Ihre E-Mail einfügen)")
+    st.info("📧 **Hilfe & Support**\n\nHaben Sie keinen Code erhalten oder gibt es Probleme mit der Zahlung? Kontaktieren Sie uns bitte:\n\n**hello@lionmove.net** (Bitte Ihre E-Mail einfügen)")
 
 with col2:
     # 法律声明 (Impressum) - 折叠以节省空间
