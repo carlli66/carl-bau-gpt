@@ -203,33 +203,34 @@ if api_key:
 
     except Exception as e:
         st.error(f"Verbindungsfehler: {e}")
+
 import streamlit as st
 
-# --- 分隔线 ---
+# --- 放在页面底部或 Sidebar 底部 ---
 st.markdown("---")
 
-# --- 底部信息栏 (Footer Layout) ---
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.info("📧 **遇到问题？**\n\n如果支付后未收到 Code，或遇到使用问题，请联系：\n\n**support@bau-ki.de** (请替换为你的真实邮箱)")
+    # 紧急联系方式 (Support)
+    st.info("📧 **Hilfe & Support**\n\nHaben Sie keinen Code erhalten oder gibt es Probleme mit der Zahlung? Kontaktieren Sie uns bitte:\n\n**support@bau-ki.de** (Bitte Ihre E-Mail einfügen)")
 
 with col2:
-    with st.expander("⚖️ Impressum & Rechtliches (点击展开)"):
+    # 法律声明 (Impressum) - 折叠以节省空间
+    with st.expander("⚖️ Impressum & Rechtliches"):
         st.markdown("""
         ### Angaben gemäß § 5 TMG
         
-        **Betreiber:** [你的名字或公司名称]  
-        [街道和门牌号, 如: Musterstraße 1]  
-        [邮编和城市, 如: 38100 Braunschweig]  
+        **Betreiber:** [M.Sc. Architekt Li]  
+        [Vorgarten 1b]  
+        [38104 Braunschweig]  
         
-        **Kontakt:** E-Mail: [你的邮箱]  
-        Telefon: [你的电话, 建议填写以符合TMG要求]  
+        **Kontakt:** E-Mail: [hello@lionmove.net]  
         
-        **Umsatzsteuer-ID:** [如果有税号请填写: DE123456789]  
+        **Umsatzsteuer-ID:** [USt-IdNr.: DE368013016]  
         
-        **Haftungsausschluss (Disclaimer):** Der Inhalt dieses Tools wurde mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
+        **Haftungsausschluss:** Die durch die KI generierten Inhalte dienen lediglich als Hilfestellung und ersetzen keine fachliche Beratung. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte wird keine Gewähr übernommen.
         """)
 
-# --- 版权声明 (可选) ---
-st.caption("© 2026 Bau-KI. All rights reserved. Made with Streamlit in Braunschweig.")
+# 版权声明
+st.caption("© 2026 Bau-KI. Entwickelt in Braunschweig. Alle Rechte vorbehalten.")
