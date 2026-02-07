@@ -5,8 +5,8 @@ from PIL import Image
 # ==========================================
 # 1. 核心配置
 # ==========================================
-PREMIUM_CODE = "BAU2026"  
-STRIPE_LINK = "https://buy.stripe.com/你的链接" 
+PREMIUM_CODE = "BAU2026"  # 解锁密码
+STRIPE_LINK = "https://buy.stripe.com/你的链接" # Stripe 链接
 
 # ==========================================
 # 2. 页面配置
@@ -37,6 +37,7 @@ with st.sidebar:
 
     if st.session_state.is_premium:
         st.success("👑 **Premium Aktiv**")
+        st.caption("Modell: Gemini 2.5 Pro (Latest)")
         if st.button("Logout"):
             st.session_state.is_premium = False
             st.rerun()
@@ -63,46 +64,41 @@ with st.sidebar:
                     st.error("Falscher Code.")
 
 # ==========================================
-# 4. AI 智能调用函数 (核心修复)
+# 4. AI 智能调用函数 (已更新为您的可用模型)
 # ==========================================
-def try_generate_content(api_key, prompt, image=None):
+def get_ai_response(api_key, prompt, image=None):
     genai.configure(api_key=api_key)
     
-    # 备选模型列表：从最新到最老
-    # 如果 1.5 都不行，最后会尝试 gemini-pro (1.0版本)
-    candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]
+    # ★★★ 关键修改：使用了您列表里存在的模型 ★★★
+    # 优先用 2.5 Pro (最强)，如果不行用 2.5 Flash (最快)
+    model_priority = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"]
     
     last_error = None
 
-    for model_name in candidate_models:
+    for model_name in model_priority:
         try:
-            # 尝试加载模型
             model = genai.GenerativeModel(model_name)
             
-            # 准备内容
             content = [prompt]
             if image:
                 content.append(image)
-                
+            
             # 发送请求
             response = model.generate_content(content)
-            
-            # 如果成功，返回文本和使用的模型名
-            return response.text, model_name
+            return response.text
             
         except Exception as e:
-            # 记录错误并继续尝试下一个模型
             last_error = e
-            continue
+            continue # 尝试下一个模型
     
-    # 如果循环结束还没成功，抛出最后的错误
+    # 如果所有模型都失败
     raise last_error
 
 # ==========================================
 # 5. 主界面
 # ==========================================
 st.title("🏗️ DE-BauKI Expert")
-st.markdown("Ihr KI-Architekt für Baurecht, Sanierung & Kosten.")
+st.markdown("Ihr KI-Architekt für Baurecht, Sanierung & Kosten (Powered by Gemini 2.5).")
 
 col1, col2, col3 = st.columns(3)
 with col1: st.markdown('<div style="text-align:center">⚖️<br><small>Baurecht</small></div>', unsafe_allow_html=True)
@@ -126,50 +122,41 @@ if api_key:
 
         if prompt := st.chat_input("Frage stellen..."):
             
+            # 显示用户问题
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.write(prompt)
                 if uploaded_file:
                     st.image(uploaded_file, width=200)
 
+            # AI 回答
             with st.chat_message("assistant"):
-                with st.spinner("Bau-KI denkt nach..."):
+                with st.spinner("Bau-KI denkt nach (Gemini 2.5)..."):
                     try:
-                        # 准备图片对象
+                        # 准备图片
                         img_obj = Image.open(uploaded_file) if uploaded_file else None
                         
                         # 构造 Prompt
                         sys_prompt = "Du bist ein deutscher Bau-Experte. Antworte präzise auf Deutsch."
                         full_prompt = sys_prompt + "\n\nFrage: " + prompt
 
-                        #调用我们的智能函数
-                        ans_text, used_model = try_generate_content(api_key, full_prompt, img_obj)
+                        # 调用 AI
+                        ans_text = get_ai_response(api_key, full_prompt, img_obj)
                         
-                        # 显示回答
+                        # 显示并保存
                         st.markdown(ans_text)
-                        # (可选) 显示到底用了哪个模型，方便调试
-                        # st.caption(f"Beantwortet mit Modell: {used_model}")
-                        
                         st.session_state.messages.append({"role": "assistant", "content": ans_text})
 
+                        # 扣费
                         if not st.session_state.is_premium:
                             st.session_state.msg_count += 1
                             st.rerun()
 
                     except Exception as e:
-                        st.error(f"Verbindungsfehler: {e}")
-                        # 只有在出错时才显示调试信息
-                        st.info("Tipp: Klicken Sie oben rechts auf 'App' -> 'Reboot app'.")
-                        
-                        # 调试：显示所有可用模型，让你知道到底支持啥
-                        try:
-                            st.warning("Verfügbare Modelle für diesen API Key:")
-                            for m in genai.list_models():
-                                if 'generateContent' in m.supported_generation_methods:
-                                    st.write(f"- {m.name}")
-                        except:
-                            pass
+                        st.error(f"Ein Fehler ist aufgetreten: {e}")
+                        st.info("Falls das Problem weiterhin besteht, prüfen Sie Ihren API Key.")
     else:
         st.warning("🔒 Limit erreicht.")
+        st.caption("Bitte Code eingeben (siehe Sidebar).")
 else:
-    st.warning("Bitte Google API Key eingeben.")
+    st.warning("Bitte Google API Key in der Sidebar eingeben.")
