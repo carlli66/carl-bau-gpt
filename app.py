@@ -258,7 +258,7 @@ col_f1, col_f2, col_f3 = st.columns(3)
 
 with col_f1:
     st.markdown("##### Kontakt")
-    st.caption("📧 support@bau-ki.de")
+    st.caption("📧 hello@lionmove.net")
     st.caption("📍 Braunschweig, Deutschland")
 
 with col_f2:
@@ -267,11 +267,11 @@ with col_f2:
         st.caption("""
         **Angaben gemäß § 5 TMG**
         
-        **Betreiber:** M.Sc. Architekt [Ihr Name]
-        [Straße und Hausnummer]
-        [PLZ und Ort]
+        **Betreiber:** M.Sc. Architekt Li
+        Vorgarten 1b 
+        38104 Braunschweig
         
-        **Kontakt:** E-Mail: support@bau-ki.de
+        **Kontakt:** E-Mail: hello@lionmove.net
         
         **Haftung:** Die KI-Antworten dienen nur zur Orientierung und ersetzen keine Fachberatung.
         Keine Gewähr für Richtigkeit.
