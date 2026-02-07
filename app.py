@@ -107,9 +107,11 @@ if api_key:
     
     # ★★★ 这里升级了模型 ★★★
     try:
-        model = genai.GenerativeModel("gemini-1.5-pro-latest") 
-    except Exception as e:
-        st.error(f"Modell-Fehler: {e}")
+            model = genai.GenerativeModel("gemini-1.5-pro-latest") 
+        except Exception as e:
+            # 如果 Pro 还是报错，自动降级回 Flash 保证 App 不崩溃
+            st.warning("⚠️ Pro-Modell nicht verfügbar, wechsle zu Flash...")
+            model = genai.GenerativeModel("gemini-1.5-flash")
 
     if can_ask:
         # 文件上传区
