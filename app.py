@@ -107,7 +107,7 @@ if api_key:
     
     # ★★★ 这里升级了模型 ★★★
     try:
-        model = genai.GenerativeModel("gemini-1.5-pro") 
+        model = genai.GenerativeModel("gemini-1.5-pro-latest") 
     except Exception as e:
         st.error(f"Modell-Fehler: {e}")
 
