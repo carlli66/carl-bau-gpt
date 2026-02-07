@@ -29,7 +29,7 @@ if api_key:
         如果用户上传了图片，请从建筑师的专业角度分析（如：无障碍设计、防火、空间布局）。
         回答要简洁、专业，并以此为契机推荐 Carl 的付费咨询服务。
         """
-        model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system_instruction)
+        model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=system_instruction)
 
         # 文件上传区
         uploaded_file = st.file_uploader("上传平面图或现场照片 (JPG/PNG)", type=["jpg", "png", "jpeg"])
