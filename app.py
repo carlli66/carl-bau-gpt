@@ -267,11 +267,13 @@ with col_f2:
         st.caption("""
         **Angaben gemäß § 5 TMG**
         
-        **Betreiber:** M.Sc. Architekt Li
-        Vorgarten 1b 
+        **Betreiber:** M.Sc. Architekt Li, 
+        Vorgarten 1b,  
         38104 Braunschweig
         
         **Kontakt:** E-Mail: hello@lionmove.net
+
+        **Umsatzsteuer-ID:** DE368013016
         
         **Haftung:** Die KI-Antworten dienen nur zur Orientierung und ersetzen keine Fachberatung.
         Keine Gewähr für Richtigkeit.
