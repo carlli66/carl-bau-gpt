@@ -10,7 +10,7 @@ import time
 st.set_page_config(
     page_title="DE-BauKI | Ihr Experten-Tool", 
     page_icon="🏗️", 
-    layout="wide", # 开启宽屏模式，更像专业软件
+    layout="wide", # 开启宽屏模式
     initial_sidebar_state="expanded"
 )
 
@@ -19,9 +19,10 @@ PREMIUM_CODE = "BAU2026"
 STRIPE_LINK = "https://buy.stripe.com/6oUbJ1dR4bfQfsj0EodMI02" 
 
 # ==========================================
-# 2. Cookie 管理 & 状态初始化
+# 2. Cookie 管理 & 状态初始化 (已修复错误)
 # ==========================================
-@st.cache_resource(experimental_allow_widgets=True)
+# ★★★ 修复点：去掉了 (experimental_allow_widgets=True) ★★★
+@st.cache_resource
 def get_manager():
     return stx.CookieManager()
 
@@ -36,7 +37,7 @@ if "is_premium" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = [] 
 
-# 同步检查
+# 同步检查 (防止刷新丢失)
 if cookie_usage and int(cookie_usage) > st.session_state.msg_count:
     st.session_state.msg_count = int(cookie_usage)
 
@@ -46,7 +47,7 @@ if cookie_usage and int(cookie_usage) > st.session_state.msg_count:
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2666/2666505.png", width=70)
     st.markdown("## 🏗️ DE-BauKI")
-    st.caption("AI-Powered Real Estate Expert")
+    st.caption("Professional AI Real Estate Expert")
     
     # API Key
     if "GOOGLE_API_KEY" in st.secrets:
@@ -97,7 +98,7 @@ with st.sidebar:
                         st.error("Ungültig")
 
     st.markdown("---")
-    st.caption("v3.0.1 Professional Build")
+    st.caption("v3.1 Professional Build")
 
 # ==========================================
 # 4. 智能 AI 核心 (多模型支持)
@@ -120,15 +121,15 @@ def get_ai_response(api_key, sys_prompt, user_prompt, image=None):
     raise Exception("Alle KI-Modelle derzeit ausgelastet.")
 
 # ==========================================
-# 5. 主界面布局 (Tab 分页设计)
+# 5. 主界面布局 (Tab 分页设计 - 专业版)
 # ==========================================
 
-# Hero Header
+# Hero Header - 专业配色
 st.markdown("""
 <style>
-    .main-header {font-size: 2.5rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0;}
-    .sub-header {font-size: 1.2rem; color: #64748B; margin-bottom: 20px;}
-    .feature-card {background-color: #F8FAFC; padding: 15px; border-radius: 8px; border-left: 5px solid #1E3A8A;}
+    .main-header {font-size: 2.5rem; font-weight: 700; color: #0F172A; margin-bottom: 0;}
+    .sub-header {font-size: 1.2rem; color: #475569; margin-bottom: 20px;}
+    .feature-card {background-color: #F1F5F9; padding: 15px; border-radius: 8px; border-left: 5px solid #0F172A;}
 </style>
 <div class="main-header">DE-BauKI Experte</div>
 <div class="sub-header">Ihr digitaler Architekt, Bauingenieur und Finanzierungsberater.</div>
