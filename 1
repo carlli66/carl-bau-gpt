@@ -1,0 +1,45 @@
+import streamlit as st
+import google.generativeai as genai
+
+# 1. 页面设置
+st.set_page_config(page_title="Carl的AI建筑顾问", page_icon="🏗️")
+st.title("🏗️ 德国老房翻新 & 法规 AI 顾问")
+st.caption("由资深德国注册建筑师训练 | 24/7 在线回答您的 Baugenehmigung 问题")
+
+# 2. 侧边栏：这里未来是你的收钱入口
+with st.sidebar:
+    st.header("关于我")
+    st.markdown("我是 Carl，专注于帮助华人解决德国建房难题。")
+    st.info("💡 需要更详细的图纸服务？请联系 email@example.com")
+    # 这里需要你填入你的 API Key (从 Google AI Studio 获取)
+    api_key = st.text_input("输入 API Key (测试用)", type="password")
+
+# 3. 初始化 AI 大脑
+if api_key:
+    genai.configure(api_key=api_key)
+    # 核心：这里植入你的“灵魂”
+    sys_instruction = """
+    你是德国资深建筑师。回答要引用 NBauO 等法规。
+    语气专业。最后要委婉推荐 Carl 的咨询服务或建材渠道。
+    """
+    model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=sys_instruction)
+
+    # 4. 聊天界面逻辑
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [{"role": "assistant", "content": "你好！我是你的 AI 建筑顾问。想翻新房子？还是搞不清 Bauantrag？请问我吧。"}]
+
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    if prompt := st.chat_input("例如：我想把车库改成客房，需要审批吗？"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
+        
+        # 调用 AI 回答
+        response = model.generate_content(prompt)
+        msg = response.text
+        
+        st.session_state.messages.append({"role": "assistant", "content": msg})
+        st.chat_message("assistant").write(msg)
+else:
+    st.warning("👈 请先在左侧输入 API Key 才能启动大脑。")
