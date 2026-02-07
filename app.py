@@ -102,7 +102,9 @@ for message in st.session_state.messages:
 # 判断是否允许提问
 can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
-if api_key:
+# ... 前面的代码 ...
+    
+    if api_key:
         genai.configure(api_key=api_key)
         
         # ★★★ 修改了这一行：加上 -latest ★★★
@@ -112,6 +114,8 @@ if api_key:
             # 如果 Pro 还是报错，自动降级回 Flash 保证 App 不崩溃
             st.warning("⚠️ Pro-Modell nicht verfügbar, wechsle zu Flash...")
             model = genai.GenerativeModel("gemini-1.5-flash")
+
+    # ... 后面的代码 ...
 
     if can_ask:
         # 文件上传区
