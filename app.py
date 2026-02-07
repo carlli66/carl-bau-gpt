@@ -19,25 +19,25 @@ PREMIUM_CODE = "BAU2026"
 STRIPE_LINK = "https://buy.stripe.com/6oUbJ1dR4bfQfsj0EodMI02" 
 
 # ==========================================
-# 2. Cookie 管理 & 状态初始化 (已修复错误)
+# 2. Cookie 管理 & 状态初始化 (已修复 CachedWidgetWarning)
 # ==========================================
-# ★★★ 修复点：去掉了 (experimental_allow_widgets=True) ★★★
-@st.cache_resource
-def get_manager():
-    return stx.CookieManager()
+# ★★★ 修复点：直接初始化，不要使用 @st.cache_resource ★★★
+cookie_manager = stx.CookieManager()
 
-cookie_manager = get_manager()
+# 获取 Cookie (稍作延迟以确保组件加载)
 cookie_usage = cookie_manager.get(cookie="bauki_usage")
 
 # 初始化 Session State
 if "msg_count" not in st.session_state:
+    # 如果 Cookie 有值，就用 Cookie 的值，否则为 0
     st.session_state.msg_count = int(cookie_usage) if cookie_usage else 0
+
 if "is_premium" not in st.session_state:
     st.session_state.is_premium = False 
 if "messages" not in st.session_state:
     st.session_state.messages = [] 
 
-# 同步检查 (防止刷新丢失)
+# 同步检查 (如果浏览器里存的次数比当前 Session 多，说明是刷新了页面，强制同步)
 if cookie_usage and int(cookie_usage) > st.session_state.msg_count:
     st.session_state.msg_count = int(cookie_usage)
 
@@ -67,6 +67,7 @@ with st.sidebar:
         st.markdown("---")
         if st.button("Logout"):
             st.session_state.is_premium = False
+            # 清除状态并刷新
             st.rerun()
     else:
         # 免费版进度条
@@ -98,7 +99,7 @@ with st.sidebar:
                         st.error("Ungültig")
 
     st.markdown("---")
-    st.caption("v3.1 Professional Build")
+    st.caption("v3.2 Professional Build")
 
 # ==========================================
 # 4. 智能 AI 核心 (多模型支持)
@@ -256,7 +257,11 @@ if api_key:
                         if not st.session_state.is_premium:
                             new_val = st.session_state.msg_count + 1
                             st.session_state.msg_count = new_val
+                            
+                            # 更新 Cookie
                             cookie_manager.set("bauki_usage", new_val, key="update_usage")
+                            
+                            # 稍作等待以确保 Cookie 写入
                             time.sleep(0.5)
                             st.rerun()
 
