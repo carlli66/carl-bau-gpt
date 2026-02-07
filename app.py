@@ -103,10 +103,10 @@ for message in st.session_state.messages:
 can_ask = st.session_state.is_premium or (st.session_state.msg_count < 3)
 
 if api_key:
-    genai.configure(api_key=api_key)
-    
-    # ★★★ 这里升级了模型 ★★★
-    try:
+        genai.configure(api_key=api_key)
+        
+        # ★★★ 修改了这一行：加上 -latest ★★★
+        try:
             model = genai.GenerativeModel("gemini-1.5-pro-latest") 
         except Exception as e:
             # 如果 Pro 还是报错，自动降级回 Flash 保证 App 不崩溃
