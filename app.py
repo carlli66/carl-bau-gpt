@@ -273,4 +273,13 @@ with col_f2:
         
         **Kontakt:** E-Mail: support@bau-ki.de
         
-        **Haftung:**
+        **Haftung:** Die KI-Antworten dienen nur zur Orientierung und ersetzen keine Fachberatung.
+        Keine Gewähr für Richtigkeit.
+        """)
+
+with col_f3:
+    st.markdown("##### Systemstatus")
+    st.caption("🟢 Alle Systeme betriebsbereit")
+    st.caption("🤖 Engine: Gemini 2.5 Pro")
+
+st.markdown("<br>", unsafe_allow_html=True)
