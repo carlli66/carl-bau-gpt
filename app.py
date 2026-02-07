@@ -11,11 +11,11 @@ if "msg_count" not in st.session_state:
 if "is_premium" not in st.session_state:
     st.session_state.is_premium = False
 
-# --- 3. 侧边栏 (修正版) ---
+# --- 3. 侧边栏 (控制台) ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2666/2666505.png", width=50)
     st.markdown("### Mein Status")
-    
+
     # 自动读取 Key
     if "GOOGLE_API_KEY" in st.secrets:
         api_key = st.secrets["GOOGLE_API_KEY"]
@@ -23,32 +23,54 @@ with st.sidebar:
         api_key = st.text_input("Admin Key", type="password")
 
     st.markdown("---")
-    
-    # 状态显示
+
+    # --- 状态显示与付费逻辑 ---
     if st.session_state.is_premium:
+        # 情况 A: 已经是会员
         st.success("💎 Premium Pass Aktiv")
+        st.caption("Sie haben 24h unbegrenzten Zugriff.")
+    
     else:
+        # 情况 B: 还是免费用户
         left = 3 - st.session_state.msg_count
+        
         if left > 0:
+            # B1: 还有免费次数
             st.info(f"Kostenlose Fragen: {left} / 3")
             st.progress((3 - left) / 3)
         else:
+            # B2: 次数用完了 -> 显示支付墙！
             st.error("Limit erreicht (0/3)")
-            st.caption("🔒 Upgrade erforderlich")
+            st.markdown("""
+            <div style="background-color:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; color:#856404;">
+                <small>🔒 Das Tageslimit ist erreicht.</small>
+                <br>
+                <b>Holen Sie sich den Unlimited Pass für nur 4,99€</b>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # --- 【这里粘贴你的 Stripe 链接】 ---
+            stripe_url = "https://buy.stripe.com/6oU9AT9eMeqJ0tX8pndUY00" 
+            # ---------------------------------
+            
+            st.link_button("👉 Jetzt Freischalten", stripe_url)
+            st.caption("Sie erhalten den Code sofort nach der Zahlung.")
 
     st.markdown("---")
-    
-    # --- 【关键修改】解锁区域 ---
+
+    # --- 解锁区域 ---
     with st.expander("🔓 Zugangscode eingeben"):
-        # 修正：占位符不再显示密码，而是显示“请输入代码”
-        code = st.text_input("Code:", placeholder="Code hier eingeben...", label_visibility="collapsed")
+        # 这里绝对安全，F12看不到密码
+        code_input = st.text_input("Code:", placeholder="Code hier eingeben...", label_visibility="collapsed")
+        
         if st.button("Aktivieren"):
-            # 真正的密码校验逻辑在这里（用户看不见）
-            if code == "BAU2026": 
+            # 密码校验
+            if code_input == "BAU2026": 
                 st.session_state.is_premium = True
+                st.balloons() # 放个气球庆祝一下
                 st.rerun() 
             else:
-                st.error("Code ungültig")
+                st.error("Code ungültig. Bitte prüfen Sie Ihre Zahlung.")
 
 # --- 4. 主标题 (修正版) ---
 # 去掉了前面的国旗和重复的 DE，更加清爽
